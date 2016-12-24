@@ -10,6 +10,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
 
 /**
  * Created by djj on 2016/10/31.
@@ -31,6 +33,41 @@ public class DBHelper {
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
             System.out.println("database connect error!");
+        }
+
+    }
+
+    public boolean updatefromxls(ArrayList<MainTable> tables){
+        if(!connect()) return false;
+        java.util.Date date=new java.util.Date();
+        Timestamp inputtime=new Timestamp(date.getTime());
+        int rowcount=0;
+        try {
+            for (MainTable t : tables){
+                stmt = conn.prepareStatement("insert main(inputtime,user,num,cnum,name,address,cellphone,phone,year,month,money) values(?,?,?,?,?,?,?,?,?,?,?)");
+                stmt.setTimestamp(1, inputtime);
+                stmt.setString(2, t.user);
+                stmt.setString(3, t.num);
+                stmt.setString(4, t.cnum);
+                stmt.setString(5, t.name);
+                stmt.setString(6, t.address);
+                stmt.setString(7, t.cellphone);
+                stmt.setString(8, t.phone);
+                stmt.setString(9, t.year);
+                stmt.setString(10, t.month);
+                stmt.setString(11, t.money);
+                rowcount+=stmt.executeUpdate();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+        close();
+        if (rowcount==tables.size()){
+            return true;
+        }else {
+            return false;
         }
 
     }

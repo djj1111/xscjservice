@@ -1,13 +1,10 @@
 package com.djj;
 
 
-
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
-import org.apache.poi.ss.usermodel.Row;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,6 +21,7 @@ import java.util.concurrent.RejectedExecutionException;
 public class MainService {
     static final int PORT = 12702, MAXSOCKET = 100;
     static boolean close = false;
+
     public static void main(String[] args) throws IOException {
         /*System.out.println("Default Charset=" + Charset.defaultCharset());
         System.out.println("file.encoding=" + System.getProperty("file.encoding"));
@@ -90,12 +88,13 @@ public class MainService {
             }
         }
     }
-    private ArrayList<MainTable> readExcel()
-    {ArrayList<MainTable> mlist=new ArrayList<>();
+
+    private ArrayList<MainTable> readExcel(String filepath) {
+        ArrayList<MainTable> mlist = new ArrayList<>();
         SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd");
         try {
             //同时支持Excel 2003、2007
-            File excelFile = new File("/home/zht/test.xls"); //创建文件对象
+            File excelFile = new File(filepath); //创建文件对象
             FileInputStream is = new FileInputStream(excelFile); //文件流
             Workbook workbook = WorkbookFactory.create(is); //这种方式 Excel 2003/2007/2010 都是可以处理的
             int sheetCount = workbook.getNumberOfSheets();  //Sheet的数量
@@ -140,25 +139,24 @@ public class MainService {
                             default:
                                 cellValue = "错误";
                         }*/
-                    MainTable table=new MainTable();
-                    table.num=row.getCell(1).getStringCellValue();
-                    table.cnum=row.getCell(2).getStringCellValue();
-                    table. name=row.getCell(3).getStringCellValue();
-                    table.address=row.getCell(4).getStringCellValue();
-                    table.year=row.getCell(11).getStringCellValue();
-                    table.month=row.getCell(12).getStringCellValue();
-                    table.money=row.getCell(13).getStringCellValue();
-                    table.cellphone=row.getCell(16).getStringCellValue();
-                    table.phone=row.getCell(17).getStringCellValue();
+                    MainTable table = new MainTable();
+                    table.num = row.getCell(1).getStringCellValue();
+                    table.cnum = row.getCell(2).getStringCellValue();
+                    table.user=table.cnum.substring(0,2)+table.cnum.substring(5,8);
+                    table.name = row.getCell(3).getStringCellValue();
+                    table.address = row.getCell(4).getStringCellValue();
+                    table.year = row.getCell(11).getStringCellValue();
+                    table.month = row.getCell(12).getStringCellValue();
+                    table.money = row.getCell(13).getStringCellValue();
+                    table.cellphone = row.getCell(16).getStringCellValue();
+                    table.phone = row.getCell(17).getStringCellValue();
                     mlist.add(table);
-                        System.out.print(cellValue + "    ");
-                    }
-                    System.out.println();
                 }
+                //System.out.println();
+            }
 
 
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
