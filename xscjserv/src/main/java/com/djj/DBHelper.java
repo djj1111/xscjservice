@@ -37,7 +37,7 @@ public class DBHelper {
 
     }
 
-    public boolean updatefromxls(ArrayList<MainTable> tables){
+    /*public boolean updatefromxls(ArrayList<MainTable> tables){
         if(!connect()) return false;
         java.util.Date date=new java.util.Date();
         Timestamp inputtime=new Timestamp(date.getTime());
@@ -70,7 +70,7 @@ public class DBHelper {
             return false;
         }
 
-    }
+    }*/
 
     public boolean connect() {
         try {
@@ -84,7 +84,7 @@ public class DBHelper {
         }
     }
 
-    public void test() {
+    /*public void test() {
         connect();
         try {
             PreparedStatement stmt1 = conn.prepareStatement("select id from tmp where id=1");
@@ -103,7 +103,7 @@ public class DBHelper {
         close();
         System.out.println("Maintain database connection failed");
         return;
-    }
+    }*/
 
 
     /*public  void testblob(){
@@ -133,6 +133,117 @@ public class DBHelper {
             e.printStackTrace();
         }
     }*/
+    public int inputdatabase(MainTable table){
+        try {
+            stmt = conn.prepareStatement("insert main(inputtime,user,num,cnum,name,address,cellphone,phone,year,month,money) values(?,?,?,?,?,?,?,?,?,?,?)");
+            stmt.setTimestamp(1, table.inputtime);
+            stmt.setString(2, table.user);
+            stmt.setString(3, table.num);
+            stmt.setString(4, table.cnum);
+            stmt.setString(5, table.name);
+            stmt.setString(6, table.address);
+            stmt.setString(7, table.cellphone);
+            stmt.setString(8, table.phone);
+            stmt.setString(9, table.year);
+            stmt.setString(10, table.month);
+            stmt.setString(11, table.money);
+            return stmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return -2;
+        }
+    }
+
+    public ArrayList<MainTable> downloaddata(String user){
+        ArrayList<MainTable> mlist=new ArrayList<>();
+        try {
+            stmt = conn.prepareStatement("select id,inputtime,user,num,cnum,name,address,cellphone,phone,year,month,money from main where user=? and uploadtime is null order by inputtime");
+            stmt.setString(1,user);
+            rs = stmt.executeQuery();
+            while (!rs.isLast()) {
+                rs.next();
+                MainTable table =new MainTable();
+                table.id=rs.getInt(1);
+                table.inputtime=rs.getTimestamp(2);
+                table.user=rs.getString(3);
+                table.num=rs.getString(4);
+                table.cnum=rs.getString(5);
+                table.name=rs.getString(6);
+                table.address=rs.getString(7);
+                table.cellphone=rs.getString(8);
+                table.phone=rs.getString(9);
+                table.year=rs.getString(10);
+                table.month=rs.getString(11);
+                table.money=rs.getString(12);
+                mlist.add(table);
+            }
+            return mlist;
+        } catch (Exception e) {
+            e.printStackTrace();
+            mlist.clear();
+            return mlist;
+        }
+    }
+
+    public boolean setdownloadtime(ArrayList<MainTable> mlist){
+        Timestamp downloadtime=new Timestamp(System.currentTimeMillis());
+        try {
+            stmt = conn.prepareStatement("update main set downloadtime=? where id=?");
+            for (MainTable table : mlist){
+                stmt.setTimestamp(1, downloadtime);
+                stmt.setInt(2, table.id);
+                if(stmt.executeUpdate()<0){
+                   continue;
+                }
+            }
+            return true;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean uploaddata(MainTable table, ArrayList<String> filepaths){
+        Timestamp uploadtime=new Timestamp(System.currentTimeMillis());
+        try {
+                stmt = conn.prepareStatement("update main set uploadtime=?,filenums=?,imei=? where id=?");
+                stmt.setTimestamp(1, uploadtime);
+                stmt.setInt(2, table.filenums);
+            stmt.setString(3,table.imei);
+            stmt.setInt(4,table.id);
+                if(stmt.executeUpdate()<0){
+                    return false;
+                }
+            stmt = conn.prepareStatement("insert main(mid,path) values(?,?)");
+            for(String s : filepaths){
+               ;
+                stmt.setInt(1,table.id);
+                stmt.setString(2,s);
+                if(stmt.executeUpdate()<0){
+                    return false;
+                }
+            }
+            return true;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public String getPassword(String username){
+        try {
+            stmt = conn.prepareStatement("select password from user where username=?");
+            stmt.setString(1, username);
+            rs = stmt.executeQuery();
+            rs.first();
+            return rs.getString(1);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
     public int writedatabase(String ip, String text, byte[] in) {
         DataInputStream photo = new DataInputStream(new ByteArrayInputStream(in));

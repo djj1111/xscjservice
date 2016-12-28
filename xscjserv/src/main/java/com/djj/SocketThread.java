@@ -23,6 +23,7 @@ public class SocketThread extends Thread {
     private DataInputStream in;
     private DataOutputStream out;
     private SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private final String appname="xscj";
     //private ByteArrayInputStream photoin;
 
     public SocketThread(Socket socket) {
@@ -36,8 +37,11 @@ public class SocketThread extends Thread {
         this.dbHelper = new DBHelper();
         try {
             socket.setSoTimeout(10000);
+
             in = new DataInputStream(this.socket.getInputStream());
             out = new DataOutputStream(this.socket.getOutputStream());
+            StringBuffer request=new StringBuffer();
+            in.read();
             String s = "正在接收数据...";
             out.writeUTF(s);
             out.writeInt(NETWORKSTART);

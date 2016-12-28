@@ -1,11 +1,15 @@
 package com.djj;
 
+import java.sql.Timestamp;
+
 /**
  * Created by djj on 2016/11/13.
  */
 
 
 public class MainTable {
+    public int id;
+    public Timestamp inputtime;
     public String num;
     public String cnum;
     public String name;
@@ -16,5 +20,9 @@ public class MainTable {
     public String money;
     public String cellphone;
     public String phone;
+    public int filenums;
+    public String imei;
+    public Timestamp uploadtime;
+
 
 }

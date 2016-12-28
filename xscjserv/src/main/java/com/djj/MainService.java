@@ -1,18 +1,19 @@
 package com.djj;
 
 
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
 
+
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.text.SimpleDateFormat;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,41 +22,37 @@ import java.util.concurrent.RejectedExecutionException;
 public class MainService {
     static final int PORT = 12702, MAXSOCKET = 100;
     static boolean close = false;
+    static String mainpath="d:\\fuck";
 
     public static void main(String[] args) throws IOException {
-        /*System.out.println("Default Charset=" + Charset.defaultCharset());
-        System.out.println("file.encoding=" + System.getProperty("file.encoding"));
-        System.out.println("Default Charset in Use=" + getDefaultCharSet());
-        String t = "测试字符...";
-        System.out.println(t);
-        String utf8 = new String(t.getBytes("UTF-8"));
-        System.out.println(utf8);
-        String unicode = new String(utf8.getBytes(), "UTF-8");
-        System.out.println(unicode);
-        String gbk = new String(unicode.getBytes("GBK"));
-
-        System.out.println(gbk);*/
         ExecutorService fixedThreadPool = Executors.newFixedThreadPool(MAXSOCKET);
         ServerSocket server = new ServerSocket(PORT);
-        /*
-        * 保持MYSQL定期连接，防止休眠。
-        * */
-        Thread dbconnect_thread = new Thread(new Runnable() {
+
+        new Thread(new Runnable() {
+            //boolean updatefinished=true;
             @Override
             public void run() {
-                DBHelper dbHelper = new DBHelper();
-                while (!close) {
-                    dbHelper.test();
-                    try {
-                        Thread.sleep(4 * 60 * 60 * 1000);
-                    } catch (InterruptedException e) {
-
+                /*for(String s:getfilepath()){
+                    ArrayList<MainTable> mainTables=readExcel(mainpath+s);
+                    if (mainTables.isEmpty()) {
+                        System.out.println(""+Calendar.getInstance().getTimeInMillis());
+                        File file=new File(mainpath,s);
+                        file.renameTo(new File(mainpath,"文件格式错，请确认为excel03文件，或打开保存再试"+ Calendar.getInstance().getTimeInMillis()));
+                    }
+                }*/
+                while (!close){
+                    //updatefinished=false;
+                    inputdatabase();
+                    //updatefinished=true;
+                    try{
+                        Thread.sleep(3000);
+                    }catch (InterruptedException e){
+                        e.printStackTrace();
                     }
                 }
-                dbHelper = null;
+
             }
-        });
-        dbconnect_thread.start();
+        }).start();
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -66,7 +63,7 @@ public class MainService {
                     if (com.equalsIgnoreCase("exit")) {
                         fixedThreadPool.shutdown();
                         close = true;
-                        dbconnect_thread.interrupt();
+                        //dbconnect_thread.interrupt();
                         try {
                             Socket socket = new Socket("127.0.0.1", PORT);
                             socket.close();
@@ -89,17 +86,125 @@ public class MainService {
         }
     }
 
-    private ArrayList<MainTable> readExcel(String filepath) {
-        ArrayList<MainTable> mlist = new ArrayList<>();
-        SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd");
+    private static void inputdatabase() {
+        ArrayList<String> paths = new ArrayList<>();
         try {
-            //同时支持Excel 2003、2007
+            Runtime e = Runtime.getRuntime();
+            Process process = e.exec("cscript d:\\tttt.vbs \""+mainpath+ "\"");
+            //注意exec是另一个进程
+            File path=new File(mainpath);
+            File[] files=path.listFiles(new FilenameFilter() {
+                @Override
+                public boolean accept(File dir, String name) {
+                    if(name.lastIndexOf('.')>0)
+                    {
+                        // get last index for '.' char
+                        int lastIndex = name.lastIndexOf('.');
+
+                        // get extension
+                        String str = name.substring(lastIndex);
+
+                        // match path name extension
+                        if(str.equals(".djj"))
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+            });
+            for (int i=0;i<files.length;i++){
+                System.out.println(files[i].getAbsolutePath());
+                fileToDatabase(files[i]);
+            }
+            /*InputStreamReader isr = new InputStreamReader(is,"GBK");
+            BufferedReader br = new BufferedReader(isr);
+            String line = null;
+            while (true) {
+                *//*String line1= new String(br.readLine().getBytes("GBK"),"ISO-8859-1");
+                line=new String(line1.getBytes("ISO-8859-1"),"UTF-8");*//*
+                line=br.readLine();
+                System.out.println(line);
+                if (!line.contains(".xls"))  return paths;
+                paths.add(line);
+            }*/
+
+        } catch (IOException e) {
+            e.printStackTrace();
+           //return paths;
+        }
+    }
+
+    private static boolean fileToDatabase(File file) {
+        //ArrayList<MainTable> mlist = new ArrayList<>();
+        //SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd");
+        DBHelper dbHelper=new DBHelper();
+        Timestamp inputtime=new Timestamp(System.currentTimeMillis());
+        try {
+            /*//同时支持Excel 2003、2007
             File excelFile = new File(filepath); //创建文件对象
             FileInputStream is = new FileInputStream(excelFile); //文件流
             Workbook workbook = WorkbookFactory.create(is); //这种方式 Excel 2003/2007/2010 都是可以处理的
             int sheetCount = workbook.getNumberOfSheets();  //Sheet的数量
-            //遍历每个Sheet
-            for (int s = 0; s < sheetCount; s++) {
+            //遍历每个Sheet*/
+            FileInputStream is = new FileInputStream(file);
+            InputStreamReader isr = new InputStreamReader(is,"GBK");
+            BufferedReader br = new BufferedReader(isr);
+            if (!br.readLine().equals("站点\t用户号\t册本号\t户名\t地址\t上次抄码\t水量\t本次抄码\t抄表员\t抄表周期\t催缴员\t抄表年\t抄表月\t欠费金额\t违约金\t欠费笔数\t手机\t联系电话")){
+                br.close();
+                isr.close();
+                is.close();
+                file.renameTo(new File(file.getPath(),"文件格式错"+ Calendar.getInstance().getTimeInMillis()));
+                return false;
+            }
+            if (!dbHelper.connect()) return false;
+            do{
+                String s=br.readLine();
+                if (s==null) break;
+                MainTable table = new MainTable();
+                //split后为空的不进入数组，必须让其非空
+                s=s.replace("\t","\t$$$$$");
+                System.out.println(s);
+                String[] as=s.split("\t");
+                System.out.println(""+as.length);
+                if (as.length!=18) continue;
+                table.inputtime=inputtime;
+                if(!as[1].equals("$$$$$"))
+                table.num = as[1].substring(5);
+                if(!as[2].equals("$$$$$"))
+                table.cnum = as[2].substring(5);
+                table.user = table.cnum.substring(0, 2) + table.cnum.substring(5, 8);
+                if(!as[3].equals("$$$$$"))
+                table.name = as[3].substring(5);
+                if(!as[4].equals("$$$$$"))
+                table.address = as[4].substring(5);
+                if(!as[11].equals("$$$$$"))
+                table.year = as[11].substring(5);
+                if(!as[12].equals("$$$$$"))
+                table.month = as[12].substring(5);
+                if(!as[13].equals("$$$$$"))
+                table.money = as[13].substring(5);
+                if(!as[16].equals("$$$$$"))
+                table.cellphone = as[16].substring(5);
+                if(!as[17].equals("$$$$$"))
+                table.phone = as[17].substring(5);
+                //mlist.add(table);
+                System.out.println(table.money);
+                if (dbHelper.inputdatabase(table)<0) {
+                    System.out.println("数据库导入错误！");
+                    continue;
+                }
+                //inputdatabase
+            }
+            while(true);
+            br.close();
+            isr.close();
+            is.close();
+            file.delete();
+            dbHelper.close();
+            dbHelper=null;
+            return true;
+            /*for (int s = 0; s < sheetCount; s++) {
                 Sheet sheet = workbook.getSheetAt(s);
                 int rowCount = sheet.getPhysicalNumberOfRows(); //获取总行数
                 //遍历每一行
@@ -108,7 +213,7 @@ public class MainService {
                     Row row = sheet.getRow(r);
                     int cellCount = row.getPhysicalNumberOfCells(); //获取总列数
                     //遍历每一列
-                    /*for (int c = 0; c < cellCount; c++) {
+                    *//*for (int c = 0; c < cellCount; c++) {
                         Cell cell = row.getCell(c);
                         int cellType = cell.getCellType();
                         String cellValue = null;
@@ -138,28 +243,17 @@ public class MainService {
                                 break;
                             default:
                                 cellValue = "错误";
-                        }*/
-                    MainTable table = new MainTable();
-                    table.num = row.getCell(1).getStringCellValue();
-                    table.cnum = row.getCell(2).getStringCellValue();
-                    table.user=table.cnum.substring(0,2)+table.cnum.substring(5,8);
-                    table.name = row.getCell(3).getStringCellValue();
-                    table.address = row.getCell(4).getStringCellValue();
-                    table.year = row.getCell(11).getStringCellValue();
-                    table.month = row.getCell(12).getStringCellValue();
-                    table.money = row.getCell(13).getStringCellValue();
-                    table.cellphone = row.getCell(16).getStringCellValue();
-                    table.phone = row.getCell(17).getStringCellValue();
-                    mlist.add(table);
+                        }*//*
+
                 }
                 //System.out.println();
-            }
-
-
-        } catch (Exception e) {
+            }*/
+        } catch (IOException e) {
             e.printStackTrace();
+            dbHelper.close();
+            file.delete();
+            return false;
         }
-
-        return mlist;
     }
+
 }
