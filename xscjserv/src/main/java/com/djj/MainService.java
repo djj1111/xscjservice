@@ -20,9 +20,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 
 public class MainService {
-    static final int PORT = 12702, MAXSOCKET = 100;
-    static boolean close = false;
-    static String mainpath="d:\\fuck";
+    private static final int PORT = 12702, MAXSOCKET = 100;
+    private static boolean close = false;
+    private static String mainpath="d:\\fuck";
+    static String outputpath="d:\\fuck"
 
     public static void main(String[] args) throws IOException {
         ExecutorService fixedThreadPool = Executors.newFixedThreadPool(MAXSOCKET);

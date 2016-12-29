@@ -2,10 +2,17 @@ package com.djj;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+
+import static java.awt.SystemColor.text;
 
 /**
  * Created by djj on 2016/11/4.
@@ -17,13 +24,11 @@ public class SocketThread extends Thread {
     private DBHelper dbHelper;
     private Socket socket;
     private boolean isfinished = false;
-    private String text;
-    private int photolength;
-    private byte[] photo;
     private DataInputStream in;
     private DataOutputStream out;
-    private SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    //private SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private final String appname="xscj";
+    private String username,password;
     //private ByteArrayInputStream photoin;
 
     public SocketThread(Socket socket) {
@@ -33,76 +38,64 @@ public class SocketThread extends Thread {
     @Override
     public void run() {
         super.run();
-        int field;
-        this.dbHelper = new DBHelper();
-        try {
-            socket.setSoTimeout(10000);
-
-            in = new DataInputStream(this.socket.getInputStream());
-            out = new DataOutputStream(this.socket.getOutputStream());
-            StringBuffer request=new StringBuffer();
-            in.read();
+        if (init()){
             String s = "正在接收数据...";
-            out.writeUTF(s);
-            out.writeInt(NETWORKSTART);
-            out.flush();
-            System.out.println(df.format(new Date()) + ":" + "IP地址为" + socket.getInetAddress().toString());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+            System.out.println(s+"IP地址为" + socket.getInetAddress().toString());
+        }else{
+            failed();
+        };
+        if (getid()){
+            String s = "用户验证通过...";
+            System.out.println(s);
+        }else{
+            failed();
+        };
+
+        String command;
 
         while (!isfinished) {
             try {
-                field = in.readInt();
-                switch (field) {
-                    case FTEXT:
-                        System.out.println(df.format(new Date()) + ":" + "接收text");
-                        text = in.readUTF();
+                command = in.readUTF();
+                switch (command) {
+                    case "downloaddata":
+                        if (downloaddata()){
+                            String s = "客户端下载数据成功...";
+                            System.out.println(s);
+                            finish("downloaddata");
+                        }else{
+                            failed(downloaddata);
+                        };
                         break;
-                    case FPHOTO:
-                        photolength = in.readInt();
-                        System.out.println(df.format(new Date()) + ":" + "接收照片，长度" + String.valueOf(photolength));
-                        photo = new byte[photolength];
-                        //ByteArrayOutputStream swapStream = new ByteArrayOutputStream();
-                        /*byte[] b=new byte[2048];
-                        int length;
-                        int pos=0;
-                        int l=2048;*/
-                        for (int j = 0; j < photolength; j++)
-                            photo[j] = (byte) in.read();
-                        /*while ((length = in.read(b,0,b.length)) > 0) {
-                            System.out.println("姝ｅ湪鎺ユ敹鏁版嵁..." + length);
-                            for(int i=0;i<length;i++){
-                                photo[pos+i]=b[i];
-                            }
-                            pos+=length;
-                            if ((photolength-pos) < 1) l=photolength-pos-1;
-                            //swapStream.write(b,0,length);
-                        }*/
-
-                        //photo=swapStream.toByteArray();
-                        //in.read(photo);
+                    case "uploaddata":
+                        if (uploaddata()){
+                            String s = "客户端上传数据成功...";
+                            System.out.println(s);
+                            finish("uploaddata");
+                        }else{
+                            failed();
+                        };
                         break;
-                    case FUPDATE:
-                        System.out.println(df.format(new Date()) + ":" + "更新数据库");
-                        if (updatedb() > 0)
-                            System.out.println(df.format(new Date()) + ":" + "数据库更新成功");
-                        break;
-                    case FFINISHED:
-                        finish("success finished");
+                    case "canceldata":
+                        if (canceldata()){
+                            String s = "客户端删除数据成功...";
+                            System.out.println(s);
+                            finish("canceldata");
+                        }else{
+                            failed();
+                        };
                         break;
                     default:
+                        failed();
                         break;
                 }
 
             } catch (IOException e) {
                 e.printStackTrace();
-                finish("error");
+                failed();
                 break;
             }
         }
-        text = null;
-        photo = null;
+        failed();
         try {
             in.close();
             out.close();
@@ -110,6 +103,138 @@ public class SocketThread extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    private boolean init(){
+        this.dbHelper = new DBHelper();
+        dbHelper.connect();
+        try {
+            socket.setSoTimeout(10000);
+            in = new DataInputStream(this.socket.getInputStream());
+            out = new DataOutputStream(this.socket.getOutputStream());
+            if(in.readUTF().equals(appname)) {
+                out.writeUTF("application pass");
+                out.flush();
+            }
+            return true;
+        }catch (SocketException e){
+            e.printStackTrace();
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        return false;
+    }
+    private boolean getid(){
+        try {
+            username=in.readUTF();
+            password=in.readUTF();
+            if(dbHelper.getPassword(username).equals(password)){
+                out.writeUTF("user pass");
+                out.flush();
+            }
+            return true;
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        return false;
+    }
+    private boolean downloaddata(){
+        ArrayList<MainTable> tables;
+        DateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        try {
+            tables=dbHelper.downloaddata(username);
+            out.writeInt(tables.size());
+            out.flush();
+            for (MainTable table : tables){
+                out.writeInt(table.id);
+                out.writeUTF(sdf.format(table.inputtime));
+                out.writeUTF(table.user);
+                out.writeUTF(table.num);
+                out.writeUTF(table.cnum);
+                out.writeUTF(table.name);
+                out.writeUTF(table.address);
+                out.writeUTF(table.cellphone);
+                out.writeUTF(table.phone);
+                out.writeUTF(table.year);
+                out.writeUTF(table.month);
+                out.writeUTF(table.money);
+                out.flush();
+            }
+            if(in.readUTF().equals("downloaddata pass")){
+                if(dbHelper.setdownloadtime(tables)){
+                    return true;
+                }else {
+                    return false;
+                }
+            }else {
+                return false;
+            }
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        return false;
+    }
+    private boolean uploaddata(){
+        Date now=new Date();
+        DateFormat sdf = new SimpleDateFormat("yyyy-MM");
+        String spath=sdf.format(now);
+        String filename;
+        int filelength;
+        String filepath;
+        try {
+            int tablenums = in.readInt();
+            for (int i = 0; i < tablenums; i++) {
+                MainTable table = new MainTable();
+                table.id = in.readInt();
+                table.user = in.readUTF();
+                table.imei = in.readUTF();
+                table.filenums = in.readInt();
+                ArrayList<String> filepaths = new ArrayList<>();
+                for (int j = 0; i < table.filenums; j++) {
+                    filename = in.readUTF();
+                    filename.replace("/", "").replace("\\", "");
+                    filepath = MainService.outputpath + File.separator + table.user + File.separator + spath ;
+                    File path = new File(filepath);
+                    path.mkdirs();
+
+                    File file = new File(filepath , filename);
+                    FileOutputStream fos = new FileOutputStream(file);
+                    filelength = in.readInt();
+                    //byte[] filebuf=new byte[filelength];
+                    for (int k = 0; k < filelength; k++)
+                        fos.write(in.read());
+                    fos.flush();
+                    fos.close();
+                    filepaths.add(file.getCanonicalPath());
+                }
+                if (dbHelper.uploaddata(table, filepaths)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        return false;
+    }
+    private boolean canceldata(){
+        try {
+            int tablenums = in.readInt();
+            for (int i = 0; i < tablenums; i++) {
+                MainTable table = new MainTable();
+                table.id = in.readInt();
+                table.imei = in.readUTF();
+
+                if (dbHelper.canceldata(table)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        return false;
     }
 
 

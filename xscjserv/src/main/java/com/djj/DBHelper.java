@@ -215,9 +215,8 @@ public class DBHelper {
                 if(stmt.executeUpdate()<0){
                     return false;
                 }
-            stmt = conn.prepareStatement("insert main(mid,path) values(?,?)");
-            for(String s : filepaths){
-               ;
+            stmt = conn.prepareStatement("insert file(mid,path) values(?,?)");
+            for(String s : filepaths){               ;
                 stmt.setInt(1,table.id);
                 stmt.setString(2,s);
                 if(stmt.executeUpdate()<0){
@@ -230,6 +229,23 @@ public class DBHelper {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public boolean canceldata(MainTable table){
+        Timestamp uploadtime=new Timestamp(System.currentTimeMillis());
+        try {
+            stmt = conn.prepareStatement("update main set uploadtime=?,filenums=?,imei=? where id=?");
+            stmt.setTimestamp(1, uploadtime);
+            stmt.setInt(2, 0);
+            stmt.setString(3,table.imei);
+            stmt.setInt(4,table.id);
+            if(stmt.executeUpdate()>0){
+                return true;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     public String getPassword(String username){
