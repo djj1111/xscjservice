@@ -1,8 +1,6 @@
 package com.djj;
 
 
-
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -23,11 +21,12 @@ public class MainService {
     private static final int PORT = 12702, MAXSOCKET = 100;
     private static boolean close = false;
     private static String mainpath="d:\\fuck";
-    static String outputpath="d:\\fuck"
+    static String outputpath="d:\\fuck";
 
     public static void main(String[] args) throws IOException {
         ExecutorService fixedThreadPool = Executors.newFixedThreadPool(MAXSOCKET);
         ServerSocket server = new ServerSocket(PORT);
+
 
         new Thread(new Runnable() {
             //boolean updatefinished=true;
@@ -92,7 +91,16 @@ public class MainService {
         try {
             Runtime e = Runtime.getRuntime();
             Process process = e.exec("cscript d:\\tttt.vbs \""+mainpath+ "\"");
+            process.waitFor();
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        catch (InterruptedException e){
+            e.printStackTrace();
+        }
+
             //注意exec是另一个进程
+
             File path=new File(mainpath);
             File[] files=path.listFiles(new FilenameFilter() {
                 @Override
@@ -130,10 +138,7 @@ public class MainService {
                 paths.add(line);
             }*/
 
-        } catch (IOException e) {
-            e.printStackTrace();
-           //return paths;
-        }
+
     }
 
     private static boolean fileToDatabase(File file) {

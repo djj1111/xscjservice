@@ -160,6 +160,9 @@ public class DBHelper {
             stmt = conn.prepareStatement("select id,inputtime,user,num,cnum,name,address,cellphone,phone,year,month,money from main where user=? and uploadtime is null order by inputtime");
             stmt.setString(1,user);
             rs = stmt.executeQuery();
+            //判断 rs 非空
+            if(!rs.next()) return mlist;
+            rs.beforeFirst();
             while (!rs.isLast()) {
                 rs.next();
                 MainTable table =new MainTable();
@@ -215,8 +218,9 @@ public class DBHelper {
                 if(stmt.executeUpdate()<0){
                     return false;
                 }
-            stmt = conn.prepareStatement("insert file(mid,path) values(?,?)");
-            for(String s : filepaths){               ;
+
+            for(String s : filepaths){
+                stmt = conn.prepareStatement("insert file(mid,path) values(?,?)");              ;
                 stmt.setInt(1,table.id);
                 stmt.setString(2,s);
                 if(stmt.executeUpdate()<0){
@@ -231,17 +235,22 @@ public class DBHelper {
         }
     }
 
-    public boolean canceldata(MainTable table){
+    public boolean canceldata(ArrayList<MainTable> tables){
         Timestamp uploadtime=new Timestamp(System.currentTimeMillis());
         try {
-            stmt = conn.prepareStatement("update main set uploadtime=?,filenums=?,imei=? where id=?");
-            stmt.setTimestamp(1, uploadtime);
-            stmt.setInt(2, 0);
-            stmt.setString(3,table.imei);
-            stmt.setInt(4,table.id);
-            if(stmt.executeUpdate()>0){
-                return true;
+            for(MainTable table : tables){
+                stmt = conn.prepareStatement("update main set uploadtime=?,filenums=?,imei=? where id=?");
+                stmt.setTimestamp(1, uploadtime);
+                stmt.setInt(2, 0);
+                stmt.setString(3,table.imei);
+                stmt.setInt(4,table.id);
+                if(stmt.executeUpdate()<0){
+                    return false;
+                }
             }
+            return true;
+
+
         } catch (Exception e) {
             e.printStackTrace();
         }
