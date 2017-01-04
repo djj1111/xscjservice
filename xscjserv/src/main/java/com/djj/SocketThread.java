@@ -18,13 +18,13 @@ import java.util.Date;
 public class SocketThread extends Thread {
     private static final int FTEXT = -11, FPHOTO = -12, FUPDATE = -13, FFINISHED = -14,
             UPDATESUCCESS = -21, UPDATEFAULT = -22, DATEBASEERROR = -23, NETWORKSTART = -41;
+    //private SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private final String appname = "xscj";
     private DBHelper dbHelper;
     private Socket socket;
    // private boolean isfinished = false;
     private DataInputStream in;
     private DataOutputStream out;
-    //private SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    private final String appname = "xscj";
     private String username, password;
     //private final String flag_success = "success";
     //private ByteArrayInputStream photoin;
@@ -42,12 +42,12 @@ public class SocketThread extends Thread {
         } else {
             finish("init error");
         }
-        String s;
-        if ((s=getid())!=null) {
-            s = "用户"+s+"验证通过...";
-            System.out.println(s);
+        String s = getid();
+        if (s.equals("this user not exist") || s.equals("error")) {
+            finish(s);
         } else {
-            finish("getid error");
+            s = "用户" + s + "验证通过...";
+            System.out.println(s);
         }
         ;
 
@@ -101,15 +101,21 @@ public class SocketThread extends Thread {
         try {
             username = in.readUTF();
             password = in.readUTF();
-            if (dbHelper.getPassword(username).equals(password)) {
+            String res_user = dbHelper.getPassword(username);
+            if (res_user.equals("this user not exist")) {
+                out.writeUTF(res_user);
+                out.flush();
+                return res_user;
+            }
+            if (res_user.equals(password)) {
                 out.writeUTF("user pass");
                 out.flush();
+                return username;
             }
-            return username;
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return null;
+        return "error";
     }
 
     private String downloaddata() {

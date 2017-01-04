@@ -262,6 +262,7 @@ public class DBHelper {
             stmt = conn.prepareStatement("select password from user where username=?");
             stmt.setString(1, username);
             rs = stmt.executeQuery();
+            if (!rs.next()) return "this user not exist";
             rs.first();
             return rs.getString(1);
         } catch (Exception e) {
