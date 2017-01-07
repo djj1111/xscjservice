@@ -18,16 +18,21 @@ import java.util.ArrayList;
  */
 
 public class DBHelper {
-    private static final String url = "jdbc:mysql://10.0.0.9:9701/test?useSSL=true&verifyServerCertificate=false&connectTimeout=2000&socketTimeout=3000&autoReconnect=true&failOverReadOnly=false&maxReconnects=3";
     private static final String name = "com.mysql.jdbc.Driver";
     private static final String user = "user";
     private static final String password = "1111";
-    public PreparedStatement stmt = null;
-    public ResultSet rs = null;
-    public Connection conn = null;
+    private static String url;
+    private PreparedStatement stmt = null;
+    private ResultSet rs = null;
+    private Connection conn = null;
 
     public DBHelper() {
         //com.mysql.jdbc.Driver b;
+        MyProperty myProperty = new MyProperty();
+        String ip = myProperty.getDbserverip();
+        int port = myProperty.getDbserverport();
+        url = "jdbc:mysql://" + ip + ":" +
+                String.valueOf(port) + "/test?useSSL=true&verifyServerCertificate=false&connectTimeout=2000&socketTimeout=3000&autoReconnect=true&failOverReadOnly=false&maxReconnects=3";
         try {
             Class.forName(name);
         } catch (ClassNotFoundException e) {
@@ -73,6 +78,7 @@ public class DBHelper {
     }*/
 
     public boolean connect() {
+
         try {
             //DriverManager.setLoginTimeout(3);
             conn = DriverManager.getConnection(url, user, password);//建立数据库连接
@@ -195,9 +201,10 @@ public class DBHelper {
             for (MainTable table : mlist){
                 stmt.setTimestamp(1, downloadtime);
                 stmt.setInt(2, table.id);
-                if(stmt.executeUpdate()<0){
+                /*if(stmt.executeUpdate()<0){
                    continue;
-                }
+                }*/
+                stmt.executeUpdate();
             }
             return true;
 
@@ -220,7 +227,7 @@ public class DBHelper {
                 }
 
             for(String s : filepaths){
-                stmt = conn.prepareStatement("insert file(mid,path) values(?,?)");              ;
+                stmt = conn.prepareStatement("insert file(mid,path) values(?,?)");
                 stmt.setInt(1,table.id);
                 stmt.setString(2,s);
                 if(stmt.executeUpdate()<0){

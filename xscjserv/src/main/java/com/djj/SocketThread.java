@@ -19,7 +19,7 @@ public class SocketThread extends Thread {
     private static final int FTEXT = -11, FPHOTO = -12, FUPDATE = -13, FFINISHED = -14,
             UPDATESUCCESS = -21, UPDATEFAULT = -22, DATEBASEERROR = -23, NETWORKSTART = -41;
     //private SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    private final String appname = "xscj";
+    private String appname, outputpath;
     private DBHelper dbHelper;
     private Socket socket;
    // private boolean isfinished = false;
@@ -36,6 +36,9 @@ public class SocketThread extends Thread {
     @Override
     public void run() {
         super.run();
+        MyProperty myProperty = new MyProperty();
+        appname = myProperty.getAppname();
+        outputpath = myProperty.getOutputpath();
         if (init()) {
             String s = "正在接收数据...";
             System.out.println(s + "IP地址为" + socket.getInetAddress().toString());
@@ -49,8 +52,6 @@ public class SocketThread extends Thread {
             s = "用户" + s + "验证通过...";
             System.out.println(s);
         }
-        ;
-
         String command;
 
         //while (!isfinished) {
@@ -181,8 +182,8 @@ public class SocketThread extends Thread {
                 ArrayList<String> filepaths = new ArrayList<>();
                 for (int j = 0; j < table.filenums; j++) {
                     filename = in.readUTF();
-                    filename.replace("/", "").replace("\\", "");
-                    filepath = MainService.outputpath + File.separator + table.user + File.separator + spath;
+                    filename = filename.replace("/", "").replace("\\", "");
+                    filepath = outputpath + File.separator + table.user + File.separator + spath;
                     File path = new File(filepath);
                     path.mkdirs();
 

@@ -18,16 +18,20 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 
 public class MainService {
-    private static final int PORT = 12702, MAXSOCKET = 100;
+    private static int PORT, MAXSOCKET;
     private static boolean close = false;
-    private static String mainpath="d:\\fuck";
-    static String outputpath="d:\\fuck";
+    private static String mainpath, scanpath;
+
 
     public static void main(String[] args) throws IOException {
-        ExecutorService fixedThreadPool = Executors.newFixedThreadPool(MAXSOCKET);
+        MyProperty myProperty = new MyProperty();
+        mainpath = myProperty.getMainPath();
+        scanpath = myProperty.getScanpath();
+        PORT = myProperty.getPort();
+        MAXSOCKET = myProperty.getMaxsocket();
+
+        final ExecutorService fixedThreadPool = Executors.newFixedThreadPool(MAXSOCKET);
         ServerSocket server = new ServerSocket(PORT);
-
-
         new Thread(new Runnable() {
             //boolean updatefinished=true;
             @Override
@@ -82,6 +86,7 @@ public class MainService {
             try {
                 fixedThreadPool.execute(new SocketThread(server.accept()));
             } catch (RejectedExecutionException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -90,18 +95,21 @@ public class MainService {
         ArrayList<String> paths = new ArrayList<>();
         try {
             Runtime e = Runtime.getRuntime();
-            Process process = e.exec("cscript d:\\tttt.vbs \""+mainpath+ "\"");
+            Process process = e.exec("cscript " + mainpath + "changexls.vbs \"" + scanpath + "\"");
             process.waitFor();
         }catch (IOException e){
             e.printStackTrace();
-        }
-        catch (InterruptedException e){
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
             //注意exec是另一个进程
 
-            File path=new File(mainpath);
+        File path = new File(scanpath);
+        if (!path.exists()) {
+            System.out.println("没有" + scanpath + "这个文件夹");
+            return;
+        }
             File[] files=path.listFiles(new FilenameFilter() {
                 @Override
                 public boolean accept(File dir, String name) {
@@ -123,7 +131,7 @@ public class MainService {
                 }
             });
             for (int i=0;i<files.length;i++){
-                System.out.println(files[i].getAbsolutePath());
+                System.out.println("导入文件" + files[i].getAbsolutePath());
                 fileToDatabase(files[i]);
             }
             /*InputStreamReader isr = new InputStreamReader(is,"GBK");
@@ -170,9 +178,7 @@ public class MainService {
                 MainTable table = new MainTable();
                 //split后为空的不进入数组，必须让其非空
                 s=s.replace("\t","\t$$$$$");
-                System.out.println(s);
                 String[] as=s.split("\t");
-                System.out.println(""+as.length);
                 if (as.length!=18) continue;
                 table.inputtime=inputtime;
                 if(!as[1].equals("$$$$$"))
@@ -195,10 +201,8 @@ public class MainService {
                 if(!as[17].equals("$$$$$"))
                 table.phone = as[17].substring(5);
                 //mlist.add(table);
-                System.out.println(table.money);
                 if (dbHelper.inputdatabase(table)<0) {
                     System.out.println("数据库导入错误！");
-                    continue;
                 }
                 //inputdatabase
             }
