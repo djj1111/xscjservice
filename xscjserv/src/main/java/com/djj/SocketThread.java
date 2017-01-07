@@ -172,6 +172,7 @@ public class SocketThread extends Thread {
         String filepath;
         try {
             int tablenums = in.readInt();
+            System.out.println("记录数="+tablenums+"条");
             for (int i = 0; i < tablenums; i++) {
                 MainTable table = new MainTable();
                 table.id = in.readInt();
@@ -190,10 +191,32 @@ public class SocketThread extends Thread {
                     File file = new File(filepath, filename);
                     FileOutputStream fos = new FileOutputStream(file);
                     filelength = in.readInt();
-                    //byte[] filebuf=new byte[filelength];
-                    for (int k = 0; k < filelength; k++)
+                   /* byte[] filebuf=new byte[8*1024];
+                    for (int l=0;l<filelength/(8*1024);l++){
+                        in.read(filebuf);
+                        fos.write(filebuf);
+                    }
+                    for (int k = 0; k <= filelength%(8*1024); k++) {
                         fos.write(in.read());
-                    fos.flush();
+                    }
+                    fos.flush();*/
+                    int length=0;
+                    int inputlength=filelength;
+                    int size=8*1024;
+                    byte[] inputByte = new byte[size];
+                    while (true){
+                        if (inputlength < size) size=inputlength;
+                        if((length = in.read(inputByte, 0, size)) > 0){
+                            fos.write(inputByte, 0, length);
+                            fos.flush();
+                            inputlength-=length;
+                            if(inputlength==0){
+                                break;
+                            }else if(inputlength < 0){
+                                return "uploadfiles error";
+                            }
+                        }
+                    }
                     fos.close();
                     filepaths.add(file.getCanonicalPath());
                 }
