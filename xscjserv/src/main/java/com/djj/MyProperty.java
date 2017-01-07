@@ -22,7 +22,7 @@ public class MyProperty {
      * 采用静态方法
      */
     private static Properties props = new Properties();
-    private String mainpath = this.getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
+    private String mainpathiml = this.getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
 
     public MyProperty() {
         profilefile = getMainPath() + "setup.properties";
@@ -181,6 +181,7 @@ public class MyProperty {
     }
 
     public String getMainPath() {
+        String mainpath = mainpathiml;
         if (File.separator.equals("\\")) {
             mainpath = mainpath.replace("/", File.separator);
             if (!mainpath.equals("")) {

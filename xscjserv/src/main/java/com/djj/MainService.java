@@ -44,13 +44,13 @@ public class MainService {
                         file.renameTo(new File(mainpath,"文件格式错，请确认为excel03文件，或打开保存再试"+ Calendar.getInstance().getTimeInMillis()));
                     }
                 }*/
-                while (!close){
+                while (!close) {
                     //updatefinished=false;
                     inputdatabase();
                     //updatefinished=true;
-                    try{
+                    try {
                         Thread.sleep(3000);
-                    }catch (InterruptedException e){
+                    } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 }
@@ -97,43 +97,41 @@ public class MainService {
             Runtime e = Runtime.getRuntime();
             Process process = e.exec("cscript " + mainpath + "changexls.vbs \"" + scanpath + "\"");
             process.waitFor();
-        }catch (IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-            //注意exec是另一个进程
+        //注意exec是另一个进程
 
         File path = new File(scanpath);
         if (!path.exists()) {
             System.out.println("没有" + scanpath + "这个文件夹");
             return;
         }
-            File[] files=path.listFiles(new FilenameFilter() {
-                @Override
-                public boolean accept(File dir, String name) {
-                    if(name.lastIndexOf('.')>0)
-                    {
-                        // get last index for '.' char
-                        int lastIndex = name.lastIndexOf('.');
+        File[] files = path.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                if (name.lastIndexOf('.') > 0) {
+                    // get last index for '.' char
+                    int lastIndex = name.lastIndexOf('.');
 
-                        // get extension
-                        String str = name.substring(lastIndex);
+                    // get extension
+                    String str = name.substring(lastIndex);
 
-                        // match path name extension
-                        if(str.equals(".djj"))
-                        {
-                            return true;
-                        }
+                    // match path name extension
+                    if (str.equals(".djj")) {
+                        return true;
                     }
-                    return false;
                 }
-            });
-            for (int i=0;i<files.length;i++){
-                System.out.println("导入文件" + files[i].getAbsolutePath());
-                fileToDatabase(files[i]);
+                return false;
             }
+        });
+        for (int i = 0; i < files.length; i++) {
+            System.out.println("导入文件" + files[i].getAbsolutePath());
+            fileToDatabase(files[i]);
+        }
             /*InputStreamReader isr = new InputStreamReader(is,"GBK");
             BufferedReader br = new BufferedReader(isr);
             String line = null;
@@ -152,8 +150,8 @@ public class MainService {
     private static boolean fileToDatabase(File file) {
         //ArrayList<MainTable> mlist = new ArrayList<>();
         //SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd");
-        DBHelper dbHelper=new DBHelper();
-        Timestamp inputtime=new Timestamp(System.currentTimeMillis());
+        DBHelper dbHelper = new DBHelper();
+        Timestamp inputtime = new Timestamp(System.currentTimeMillis());
         try {
             /*//同时支持Excel 2003、2007
             File excelFile = new File(filepath); //创建文件对象
@@ -162,57 +160,57 @@ public class MainService {
             int sheetCount = workbook.getNumberOfSheets();  //Sheet的数量
             //遍历每个Sheet*/
             FileInputStream is = new FileInputStream(file);
-            InputStreamReader isr = new InputStreamReader(is,"GBK");
+            InputStreamReader isr = new InputStreamReader(is, "GBK");
             BufferedReader br = new BufferedReader(isr);
-            if (!br.readLine().equals("站点\t用户号\t册本号\t户名\t地址\t上次抄码\t水量\t本次抄码\t抄表员\t抄表周期\t催缴员\t抄表年\t抄表月\t欠费金额\t违约金\t欠费笔数\t手机\t联系电话")){
+            if (!br.readLine().equals("站点\t用户号\t册本号\t户名\t地址\t上次抄码\t水量\t本次抄码\t抄表员\t抄表周期\t催缴员\t抄表年\t抄表月\t欠费金额\t违约金\t欠费笔数\t手机\t联系电话")) {
                 br.close();
                 isr.close();
                 is.close();
-                file.renameTo(new File(file.getPath(),"文件格式错"+ Calendar.getInstance().getTimeInMillis()));
+                file.renameTo(new File(file.getPath(), "文件格式错" + Calendar.getInstance().getTimeInMillis()));
                 return false;
             }
             if (!dbHelper.connect()) return false;
-            do{
-                String s=br.readLine();
-                if (s==null) break;
+            do {
+                String s = br.readLine();
+                if (s == null) break;
                 MainTable table = new MainTable();
                 //split后为空的不进入数组，必须让其非空
-                s=s.replace("\t","\t$$$$$");
-                String[] as=s.split("\t");
-                if (as.length!=18) continue;
-                table.inputtime=inputtime;
-                if(!as[1].equals("$$$$$"))
-                table.num = as[1].substring(5);
-                if(!as[2].equals("$$$$$"))
-                table.cnum = as[2].substring(5);
+                s = s.replace("\t", "\t$$$$$");
+                String[] as = s.split("\t");
+                if (as.length != 18) continue;
+                table.inputtime = inputtime;
+                if (!as[1].equals("$$$$$"))
+                    table.num = as[1].substring(5);
+                if (!as[2].equals("$$$$$"))
+                    table.cnum = as[2].substring(5);
                 table.user = table.cnum.substring(0, 2) + table.cnum.substring(5, 8);
-                if(!as[3].equals("$$$$$"))
-                table.name = as[3].substring(5);
-                if(!as[4].equals("$$$$$"))
-                table.address = as[4].substring(5);
-                if(!as[11].equals("$$$$$"))
-                table.year = as[11].substring(5);
-                if(!as[12].equals("$$$$$"))
-                table.month = as[12].substring(5);
-                if(!as[13].equals("$$$$$"))
-                table.money = as[13].substring(5);
-                if(!as[16].equals("$$$$$"))
-                table.cellphone = as[16].substring(5);
-                if(!as[17].equals("$$$$$"))
-                table.phone = as[17].substring(5);
+                if (!as[3].equals("$$$$$"))
+                    table.name = as[3].substring(5);
+                if (!as[4].equals("$$$$$"))
+                    table.address = as[4].substring(5);
+                if (!as[11].equals("$$$$$"))
+                    table.year = as[11].substring(5);
+                if (!as[12].equals("$$$$$"))
+                    table.month = as[12].substring(5);
+                if (!as[13].equals("$$$$$"))
+                    table.money = as[13].substring(5);
+                if (!as[16].equals("$$$$$"))
+                    table.cellphone = as[16].substring(5);
+                if (!as[17].equals("$$$$$"))
+                    table.phone = as[17].substring(5);
                 //mlist.add(table);
-                if (dbHelper.inputdatabase(table)<0) {
+                if (dbHelper.inputdatabase(table) < 0) {
                     System.out.println("数据库导入错误！");
                 }
                 //inputdatabase
             }
-            while(true);
+            while (true);
             br.close();
             isr.close();
             is.close();
             file.delete();
             dbHelper.close();
-            dbHelper=null;
+            dbHelper = null;
             return true;
             /*for (int s = 0; s < sheetCount; s++) {
                 Sheet sheet = workbook.getSheetAt(s);
