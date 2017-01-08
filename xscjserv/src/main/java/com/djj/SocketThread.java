@@ -44,10 +44,12 @@ public class SocketThread extends Thread {
             System.out.println(s + "IP地址为" + socket.getInetAddress().toString());
         } else {
             finish("init error");
+            return;
         }
         String s = getid();
         if (s.equals("this user not exist") || s.equals("error")) {
             finish(s);
+            return;
         } else {
             s = "用户" + s + "验证通过...";
             System.out.println(s);
