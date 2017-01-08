@@ -55,7 +55,6 @@ public class SocketThread extends Thread {
             System.out.println(s);
         }
         String command;
-
         //while (!isfinished) {
         try {
             command = in.readUTF();
