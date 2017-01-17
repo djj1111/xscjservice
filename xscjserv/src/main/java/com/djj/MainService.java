@@ -91,11 +91,11 @@ public class MainService {
         }
     }
 
-    private static void inputdatabase() {
+    synchronized private static void inputdatabase() {
         ArrayList<String> paths = new ArrayList<>();
         try {
             Runtime e = Runtime.getRuntime();
-            Process process = e.exec("cscript " + mainpath + "changexls.vbs \"" + scanpath + "\"");
+            Process process = e.exec("cscript \"" + mainpath + "changexls.vbs\" \"" + scanpath + "\"");
             process.waitFor();
         } catch (IOException e) {
             e.printStackTrace();
@@ -162,14 +162,67 @@ public class MainService {
             FileInputStream is = new FileInputStream(file);
             InputStreamReader isr = new InputStreamReader(is, "GBK");
             BufferedReader br = new BufferedReader(isr);
-            if (!br.readLine().equals("站点\t用户号\t册本号\t户名\t地址\t上次抄码\t水量\t本次抄码\t抄表员\t抄表周期\t催缴员\t抄表年\t抄表月\t欠费金额\t违约金\t欠费笔数\t手机\t联系电话")) {
+            String[] title = br.readLine().split("\t");
+            int num = -1, cnum = -1, name = -1, address = -1, year = -1, month = -1, money = -1, cellphone = -1, phone = -1;
+            int maxcol = -1;
+            if (title != null) {
+                for (int i = 0; i < title.length; i++) {
+                    switch (title[i]) {
+                        case "用户号":
+                            num = i;
+                            maxcol = i;
+                            break;
+                        case "册本号":
+                            cnum = i;
+                            maxcol = i;
+                            break;
+                        case "户名":
+                            name = i;
+                            maxcol = i;
+                            break;
+                        case "地址":
+                            address = i;
+                            maxcol = i;
+                            break;
+                        case "抄表年":
+                            year = i;
+                            maxcol = i;
+                            break;
+                        case "抄表月":
+                            month = i;
+                            maxcol = i;
+                            break;
+                        case "欠费金额":
+                            money = i;
+                            maxcol = i;
+                            break;
+                        case "手机":
+                            cellphone = i;
+                            maxcol = i;
+                            break;
+                        case "联系电话":
+                            phone = i;
+                            maxcol = i;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+
+            if (num < 0 || cnum < 0 || name < 0 || address < 0 || year < 0 || month < 0 || cellphone < 0 || phone < 0 || money < 0) {
                 br.close();
                 isr.close();
                 is.close();
+                System.out.println("文件格式错");
                 file.renameTo(new File(file.getPath(), "文件格式错" + Calendar.getInstance().getTimeInMillis()));
                 return false;
             }
-            if (!dbHelper.connect()) return false;
+            if (!dbHelper.connect()) {
+                System.out.println("数据库连接错误！");
+                return false;
+            }
+            maxcol += 1;
             do {
                 String s = br.readLine();
                 if (s == null) break;
@@ -177,27 +230,32 @@ public class MainService {
                 //split后为空的不进入数组，必须让其非空
                 s = s.replace("\t", "\t$$$$$");
                 String[] as = s.split("\t");
-                if (as.length != 18) continue;
+                if (as.length < maxcol) continue;
                 table.inputtime = inputtime;
-                if (!as[1].equals("$$$$$"))
-                    table.num = as[1].substring(5);
-                if (!as[2].equals("$$$$$"))
-                    table.cnum = as[2].substring(5);
-                table.user = table.cnum.substring(0, 2) + table.cnum.substring(5, 8);
-                if (!as[3].equals("$$$$$"))
-                    table.name = as[3].substring(5);
-                if (!as[4].equals("$$$$$"))
-                    table.address = as[4].substring(5);
-                if (!as[11].equals("$$$$$"))
-                    table.year = as[11].substring(5);
-                if (!as[12].equals("$$$$$"))
-                    table.month = as[12].substring(5);
-                if (!as[13].equals("$$$$$"))
-                    table.money = as[13].substring(5);
-                if (!as[16].equals("$$$$$"))
-                    table.cellphone = as[16].substring(5);
-                if (!as[17].equals("$$$$$"))
-                    table.phone = as[17].substring(5);
+                if (!as[num].equals("$$$$$"))
+                    table.num = as[num].substring(5);
+                if (!as[cnum].equals("$$$$$"))
+                    table.cnum = as[cnum].substring(5);
+                if (table.cnum.substring(2, 3).equalsIgnoreCase("h")) {
+                    table.user = table.cnum.substring(0, 2) + "h" + table.cnum.substring(6, 8);
+                } else {
+                    table.user = table.cnum.substring(0, 2) + table.cnum.substring(5, 8);
+                }
+
+                if (!as[name].equals("$$$$$"))
+                    table.name = as[name].substring(5);
+                if (!as[address].equals("$$$$$"))
+                    table.address = as[address].substring(5);
+                if (!as[year].equals("$$$$$"))
+                    table.year = as[year].substring(5);
+                if (!as[month].equals("$$$$$"))
+                    table.month = as[month].substring(5);
+                if (!as[money].equals("$$$$$"))
+                    table.money = as[money].substring(5);
+                if (!as[cellphone].equals("$$$$$"))
+                    table.cellphone = as[cellphone].substring(5);
+                if (!as[phone].equals("$$$$$"))
+                    table.phone = as[phone].substring(5);
                 //mlist.add(table);
                 if (dbHelper.inputdatabase(table) < 0) {
                     System.out.println("数据库导入错误！");
